@@ -25,7 +25,9 @@ def _ensure_dirs(data_dir: Path) -> None:
     (data_dir / "processed").mkdir(parents=True, exist_ok=True)
 
 
-def _cache_paths(data_dir: Path, symbol: str, source: Source, interval: Interval) -> CachePaths:
+def _cache_paths(
+    data_dir: Path, symbol: str, source: Source, interval: Interval
+) -> CachePaths:
     symbol_u = symbol.upper()
     stem = f"{symbol_u}_{source}_{interval}_full"
     raw_dir = data_dir / "raw"
@@ -55,7 +57,9 @@ def _normalize_ohlcv(df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         df["date"] = pd.to_datetime(df["Date"], utc=False).dt.tz_localize(None)
     else:
-        raise ValueError("Could not find a datetime index or 'Date' column in the fetched dataframe.")
+        raise ValueError(
+            "Could not find a datetime index or 'Date' column in the fetched dataframe."
+        )
 
     rename_map = {
         "Open": "open",
@@ -72,26 +76,38 @@ def _normalize_ohlcv(df: pd.DataFrame) -> pd.DataFrame:
     df = df[["date"] + list(rename_map.keys())].rename(columns=rename_map)
 
     df["date"] = pd.to_datetime(df["date"]).dt.tz_localize(None)
-    df = df.sort_values("date").drop_duplicates(subset=["date"], keep="last").reset_index(drop=True)
+    df = (
+        df.sort_values("date")
+        .drop_duplicates(subset=["date"], keep="last")
+        .reset_index(drop=True)
+    )
 
     for c in ["open", "high", "low", "close", "adj_close"]:
         df[c] = pd.to_numeric(df[c], errors="coerce")
     df["volume"] = pd.to_numeric(df["volume"], errors="coerce")
 
-    df = df.dropna(subset=["open", "high", "low", "close", "adj_close"]).reset_index(drop=True)
+    df = df.dropna(subset=["open", "high", "low", "close", "adj_close"]).reset_index(
+        drop=True
+    )
 
     expected = ["date", "open", "high", "low", "close", "adj_close", "volume"]
     if list(df.columns) != expected:
-        raise ValueError(f"Unexpected columns after normalization. Got: {list(df.columns)}")
+        raise ValueError(
+            f"Unexpected columns after normalization. Got: {list(df.columns)}"
+        )
 
     return df
 
 
-def _fetch_yfinance_full_history(symbol: str, interval: Interval = "1d") -> pd.DataFrame:
+def _fetch_yfinance_full_history(
+    symbol: str, interval: Interval = "1d"
+) -> pd.DataFrame:
     try:
         import yfinance as yf
     except ImportError as e:
-        raise RuntimeError("yfinance is not installed. Add it via `uv add yfinance`.") from e
+        raise RuntimeError(
+            "yfinance is not installed. Add it via `uv add yfinance`."
+        ) from e
 
     df = yf.download(
         tickers=symbol,

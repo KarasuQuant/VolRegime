@@ -30,13 +30,19 @@ class DataSettings(BaseSettings):
     interval: Literal["1d"] = Field(default="1d", description="Data interval (daily).")
 
     # Optional filtering when returning data (cache can store full history)
-    start: Optional[date] = Field(default=None, description="Filter start date (inclusive).")
-    end: Optional[date] = Field(default=None, description="Filter end date (inclusive).")
+    start: Optional[date] = Field(
+        default=None, description="Filter start date (inclusive)."
+    )
+    end: Optional[date] = Field(
+        default=None, description="Filter end date (inclusive)."
+    )
 
     # Where to store files
     data_dir: Path = Field(default=Path("data"), description="Base data directory.")
     raw_dirname: str = Field(default="raw", description="Subdir for raw cache.")
-    processed_dirname: str = Field(default="processed", description="Subdir for processed outputs.")
+    processed_dirname: str = Field(
+        default="processed", description="Subdir for processed outputs."
+    )
 
     # Cache behavior
     cache_mode: Literal["use", "refresh"] = Field(
