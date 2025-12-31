@@ -20,3 +20,7 @@ test:
 .PHONY: fetch
 fetch:
 	uv run volregime fetch
+
+.PHONY: build-dataset
+build-dataset:
+	uv run volregime build-dataset
