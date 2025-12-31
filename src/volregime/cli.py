@@ -48,7 +48,9 @@ def _merge_settings_with_overrides(
     merged_end = end if end is not None else settings.end
     merged_source = source if source is not None else settings.source
     merged_interval = interval if interval is not None else settings.interval
-    merged_price_col = price_col if price_col is not None else settings.price_col_for_returns
+    merged_price_col = (
+        price_col if price_col is not None else settings.price_col_for_returns
+    )
 
     # If user passes --refresh, it should win. Otherwise use the configured cache_mode.
     merged_cache_mode = "refresh" if refresh else settings.cache_mode
@@ -193,23 +195,40 @@ def _default_dataset_out_path(*, data_dir: Path, symbol: str, horizon: int) -> P
 
 def _write_meta_json(meta: DatasetMeta, out_parquet: Path) -> Path:
     meta_path = out_parquet.with_suffix(".meta.json")
-    meta_path.write_text(json.dumps(meta.__dict__, indent=2, sort_keys=True), encoding="utf-8")
+    meta_path.write_text(
+        json.dumps(meta.__dict__, indent=2, sort_keys=True), encoding="utf-8"
+    )
     return meta_path
 
 
 @app.command()
 def build_dataset(
     # Data selection (defaults from settings unless overridden)
-    symbol: Optional[str] = typer.Option(None, "--symbol", "-s", help="Ticker symbol (override config)."),
-    data_dir: Optional[Path] = typer.Option(None, "--data-dir", help="Base data directory (override config)."),
-    start: Optional[str] = typer.Option(None, "--start", help="Start date (inclusive) YYYY-MM-DD (override config)."),
-    end: Optional[str] = typer.Option(None, "--end", help="End date (inclusive) YYYY-MM-DD (override config)."),
-    source: Optional[str] = typer.Option(None, "--source", help="Data source (override config). Currently: yfinance"),
-    interval: Optional[str] = typer.Option(None, "--interval", help="Interval (override config). Currently: 1d"),
-    refresh: bool = typer.Option(False, "--refresh", help="Force refetch and overwrite cache."),
-
+    symbol: Optional[str] = typer.Option(
+        None, "--symbol", "-s", help="Ticker symbol (override config)."
+    ),
+    data_dir: Optional[Path] = typer.Option(
+        None, "--data-dir", help="Base data directory (override config)."
+    ),
+    start: Optional[str] = typer.Option(
+        None, "--start", help="Start date (inclusive) YYYY-MM-DD (override config)."
+    ),
+    end: Optional[str] = typer.Option(
+        None, "--end", help="End date (inclusive) YYYY-MM-DD (override config)."
+    ),
+    source: Optional[str] = typer.Option(
+        None, "--source", help="Data source (override config). Currently: yfinance"
+    ),
+    interval: Optional[str] = typer.Option(
+        None, "--interval", help="Interval (override config). Currently: 1d"
+    ),
+    refresh: bool = typer.Option(
+        False, "--refresh", help="Force refetch and overwrite cache."
+    ),
     # Dataset build params
-    horizon: int = typer.Option(5, "--horizon", "-h", min=1, help="Future volatility horizon in sessions."),
+    horizon: int = typer.Option(
+        5, "--horizon", "-h", min=1, help="Future volatility horizon in sessions."
+    ),
     price_col: Optional[str] = typer.Option(
         None,
         "--price-col",
@@ -225,14 +244,25 @@ def build_dataset(
         "--mom-windows",
         help="Comma-separated momentum windows, e.g. 5,10,20 (override defaults).",
     ),
-    dd_window: Optional[int] = typer.Option(None, "--dd-window", help="Drawdown rolling window (override default)."),
-    vol_z_window: Optional[int] = typer.Option(None, "--vol-z-window", help="Volume z-score window (override default)."),
-    ewm_span: Optional[int] = typer.Option(None, "--ewm-span", help="EWM vol span (override default)."),
-
+    dd_window: Optional[int] = typer.Option(
+        None, "--dd-window", help="Drawdown rolling window (override default)."
+    ),
+    vol_z_window: Optional[int] = typer.Option(
+        None, "--vol-z-window", help="Volume z-score window (override default)."
+    ),
+    ewm_span: Optional[int] = typer.Option(
+        None, "--ewm-span", help="EWM vol span (override default)."
+    ),
     # Output
-    out: Optional[Path] = typer.Option(None, "--out", help="Output parquet path (defaults to data/processed/...)."),
-    write_meta: bool = typer.Option(True, "--meta/--no-meta", help="Write a .meta.json next to parquet."),
-    show_tail: int = typer.Option(0, "--show-tail", min=0, help="Print last N rows (0 disables)."),
+    out: Optional[Path] = typer.Option(
+        None, "--out", help="Output parquet path (defaults to data/processed/...)."
+    ),
+    write_meta: bool = typer.Option(
+        True, "--meta/--no-meta", help="Write a .meta.json next to parquet."
+    ),
+    show_tail: int = typer.Option(
+        0, "--show-tail", min=0, help="Print last N rows (0 disables)."
+    ),
 ) -> None:
     """
     Build a features+label-prep dataset (features + future_vol + regime=<NA>).
@@ -259,13 +289,17 @@ def build_dataset(
         raise typer.BadParameter("price-col must be 'adj_close' or 'close'.")
 
     # Feature config defaults + optional overrides
-    base_cfg = FeatureConfig(price_col_for_returns=data_kwargs["price_col"])  # keep other defaults
+    base_cfg = FeatureConfig(
+        price_col_for_returns=data_kwargs["price_col"]
+    )  # keep other defaults
     cfg = FeatureConfig(
         price_col_for_returns=base_cfg.price_col_for_returns,
         vol_windows=_parse_int_tuple(vol_windows, base_cfg.vol_windows),
         mom_windows=_parse_int_tuple(mom_windows, base_cfg.mom_windows),
         dd_window=int(dd_window) if dd_window is not None else base_cfg.dd_window,
-        vol_z_window=int(vol_z_window) if vol_z_window is not None else base_cfg.vol_z_window,
+        vol_z_window=(
+            int(vol_z_window) if vol_z_window is not None else base_cfg.vol_z_window
+        ),
         ewm_vol_span=int(ewm_span) if ewm_span is not None else base_cfg.ewm_vol_span,
     )
 
@@ -290,8 +324,14 @@ def build_dataset(
     )
 
     # Output path
-    out_path = out if out is not None else _default_dataset_out_path(
-        data_dir=data_kwargs["data_dir"], symbol=data_kwargs["symbol"], horizon=int(horizon)
+    out_path = (
+        out
+        if out is not None
+        else _default_dataset_out_path(
+            data_dir=data_kwargs["data_dir"],
+            symbol=data_kwargs["symbol"],
+            horizon=int(horizon),
+        )
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
 

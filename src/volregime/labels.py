@@ -16,6 +16,7 @@ class Thresholds:
       low <= vol < high -> regime 1 (MID)
       vol >= high -> regime 2 (HIGH)
     """
+
     low: float
     high: float
 
@@ -48,13 +49,17 @@ def compute_future_vol(ret_1: pd.Series, horizon: int) -> pd.Series:
     return future_vol
 
 
-def fit_thresholds(future_vol: pd.Series, q_low: float = 1 / 3, q_high: float = 2 / 3) -> Thresholds:
+def fit_thresholds(
+    future_vol: pd.Series, q_low: float = 1 / 3, q_high: float = 2 / 3
+) -> Thresholds:
     """
     Fit thresholds from given volatility series.
     """
     s = future_vol.dropna()
     if s.empty:
-        raise ValueError("future_vol_train is empty after dropping NaNs; cannot fit thresholds.")
+        raise ValueError(
+            "future_vol_train is empty after dropping NaNs; cannot fit thresholds."
+        )
 
     low = float(s.quantile(q_low))
     high = float(s.quantile(q_high))

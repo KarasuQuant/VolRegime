@@ -18,7 +18,9 @@ class DatasetMeta:
     thresholds: Optional[dict] = None
 
 
-def build_feature_frame(df_ohlcv: pd.DataFrame, feature_cfg: FeatureConfig) -> pd.DataFrame:
+def build_feature_frame(
+    df_ohlcv: pd.DataFrame, feature_cfg: FeatureConfig
+) -> pd.DataFrame:
     """
     Thin wrapper around build_features to keep naming consistent.
     """
@@ -61,7 +63,9 @@ def build_dataset_frame(
 
     # Drop rows with any NaNs in features or target-related columns we need
     before = len(df_feat)
-    df_clean = df_feat.dropna(subset=feature_cols + ["future_vol"]).reset_index(drop=True)
+    df_clean = df_feat.dropna(subset=feature_cols + ["future_vol"]).reset_index(
+        drop=True
+    )
     dropped = before - len(df_clean)
 
     meta = DatasetMeta(
@@ -87,7 +91,9 @@ def to_xy(
         if "regime" not in df_dataset.columns:
             raise ValueError("df_dataset missing 'regime' column.")
         if df_dataset["regime"].isna().any():
-            raise ValueError("Labels contain NA. Ensure thresholds are fit and labels are generated before training.")
+            raise ValueError(
+                "Labels contain NA. Ensure thresholds are fit and labels are generated before training."
+            )
 
     X = df_dataset[feature_columns].copy()
     y = df_dataset["regime"].astype("int64") if require_labels else df_dataset["regime"]

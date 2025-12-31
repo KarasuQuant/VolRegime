@@ -16,6 +16,7 @@ class FeatureConfig:
 
     Windows are in trading sessions (daily bars).
     """
+
     price_col_for_returns: PriceCol = "adj_close"
     vol_windows: tuple[int, ...] = (5, 10, 20, 60)
     mom_windows: tuple[int, ...] = (5, 10, 20)
@@ -63,7 +64,9 @@ def build_features(df_ohlcv: pd.DataFrame, cfg: FeatureConfig) -> pd.DataFrame:
     df_feat["ret_1"] = ret_1
 
     # 2) Intraday range and gap
-    df_feat["range_pct"] = (df["high"].astype(float) - df["low"].astype(float)) / df["close"].astype(float)
+    df_feat["range_pct"] = (df["high"].astype(float) - df["low"].astype(float)) / df[
+        "close"
+    ].astype(float)
 
     prev_close = df["close"].astype(float).shift(1)
     df_feat["gap_pct"] = (df["open"].astype(float) - prev_close) / prev_close
@@ -74,7 +77,9 @@ def build_features(df_ohlcv: pd.DataFrame, cfg: FeatureConfig) -> pd.DataFrame:
 
     # 4) Exponentially weighted vol (useful, cheap)
     df_feat[f"ewm_vol_{cfg.ewm_vol_span}"] = (
-        df_feat["ret_1"].ewm(span=cfg.ewm_vol_span, min_periods=cfg.ewm_vol_span, adjust=False).std(bias=False)
+        df_feat["ret_1"]
+        .ewm(span=cfg.ewm_vol_span, min_periods=cfg.ewm_vol_span, adjust=False)
+        .std(bias=False)
     )
 
     # 5) Momentum
@@ -86,7 +91,9 @@ def build_features(df_ohlcv: pd.DataFrame, cfg: FeatureConfig) -> pd.DataFrame:
     df_feat[f"dd_{cfg.dd_window}"] = (price / roll_max) - 1.0
 
     # 7) Volume z-score
-    df_feat[f"vol_z_{cfg.vol_z_window}"] = _safe_zscore(df["volume"].astype(float), window=cfg.vol_z_window)
+    df_feat[f"vol_z_{cfg.vol_z_window}"] = _safe_zscore(
+        df["volume"].astype(float), window=cfg.vol_z_window
+    )
 
     # Sanity: stable column ordering
     # Note: date first, then ret_1, then everything else sorted.

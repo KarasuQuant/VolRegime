@@ -10,11 +10,16 @@ class TemporalSplit:
     """
     Temporal split indices as integer positions in the dataframe.
     """
+
     train_end: int
     val_end: int
 
     def as_slices(self) -> tuple[slice, slice, slice]:
-        return slice(0, self.train_end), slice(self.train_end, self.val_end), slice(self.val_end, None)
+        return (
+            slice(0, self.train_end),
+            slice(self.train_end, self.val_end),
+            slice(self.val_end, None),
+        )
 
 
 def temporal_split_by_ratio(
@@ -28,7 +33,11 @@ def temporal_split_by_ratio(
     n = len(df)
     if n < 10:
         raise ValueError("Not enough rows to split reliably (need >= 10).")
-    if not (0 < train_ratio < 1) or not (0 < val_ratio < 1) or (train_ratio + val_ratio) >= 1:
+    if (
+        not (0 < train_ratio < 1)
+        or not (0 < val_ratio < 1)
+        or (train_ratio + val_ratio) >= 1
+    ):
         raise ValueError("Invalid ratios. Need 0<train<1, 0<val<1, and train+val<1.")
 
     train_end = int(n * train_ratio)
@@ -36,7 +45,9 @@ def temporal_split_by_ratio(
 
     # Ensure non-empty splits
     if train_end < 1 or val_end <= train_end or val_end >= n:
-        raise ValueError("Split produced empty partition(s). Adjust ratios or provide more data.")
+        raise ValueError(
+            "Split produced empty partition(s). Adjust ratios or provide more data."
+        )
 
     return TemporalSplit(train_end=train_end, val_end=val_end)
 
@@ -57,13 +68,17 @@ def temporal_split_by_date(
 
     d = pd.to_datetime(df[date_col])
     if not d.is_monotonic_increasing:
-        raise ValueError("df must be sorted ascending by date for temporal_split_by_date.")
+        raise ValueError(
+            "df must be sorted ascending by date for temporal_split_by_date."
+        )
 
     train_end = int((d <= train_end_date).sum())
     val_end = int((d <= val_end_date).sum())
 
     n = len(df)
     if train_end < 1 or val_end <= train_end or val_end >= n:
-        raise ValueError("Date split produced empty partition(s). Adjust cut-off dates.")
+        raise ValueError(
+            "Date split produced empty partition(s). Adjust cut-off dates."
+        )
 
     return TemporalSplit(train_end=train_end, val_end=val_end)
